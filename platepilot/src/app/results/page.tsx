@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Camera, RefreshCw, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import UpgradeModal from "@/components/UpgradeModal";
 
 interface FoodItem {
   name: string;
@@ -29,26 +30,13 @@ interface AnalysisResult {
   }>;
 }
 
-// Mock analysis function for fallback
-const analyzePlateMock = (imageData: string): AnalysisResult => {
-  return {
-    score: 65,
-    headline: "碳水炸弹来袭！",
-    actionTokens: "移走 1/3 米饭",
-    reason: "碳水化合物占比过高，蔬菜和蛋白质不足",
-    items: [
-      { name: "米饭", status: "warning", instruction: "减少到1拳大小" },
-      { name: "蔬菜", status: "bad", instruction: "增加2拳蔬菜" },
-      { name: "鸡胸肉", status: "good", instruction: "保持当前量" },
-    ],
-  };
-};
-
 function ResultsContent() {
   const router = useRouter();
   const [imageData, setImageData] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(true);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Read image from sessionStorage instead of URL params
@@ -71,6 +59,13 @@ function ResultsContent() {
             body: JSON.stringify({ image: imageData }),
           });
 
+          // Handle 403 - Upgrade required
+          if (response.status === 403) {
+            setIsAnalyzing(false);
+            setShowUpgradeModal(true);
+            return;
+          }
+
           if (!response.ok) {
             throw new Error("Analysis failed");
           }
@@ -79,9 +74,7 @@ function ResultsContent() {
           setResult(analysis);
         } catch (error) {
           console.error("Analysis error:", error);
-          // Fallback to mock data on error
-          const mockResult = analyzePlateMock(imageData);
-          setResult(mockResult);
+          setError("AI analysis failed. Please try again.");
         } finally {
           setIsAnalyzing(false);
         }
@@ -128,7 +121,16 @@ function ResultsContent() {
         </Button>
       </header>
 
-      {isAnalyzing ? (
+      {error ? (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 p-4">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 max-w-sm w-full text-center">
+            <p className="text-red-600 dark:text-red-400 font-medium mb-4">{error}</p>
+            <Button onClick={() => router.push("/")} className="bg-red-600 hover:bg-red-700 text-white">
+              Try Again
+            </Button>
+          </div>
+        </div>
+      ) : isAnalyzing ? (
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
           <div className="relative w-32 h-32">
             <div className={`absolute inset-0 rounded-full ${getScoreBg(50)} opacity-20 animate-pulse`}></div>
@@ -222,6 +224,15 @@ function ResultsContent() {
           </Button>
         </div>
       ) : null}
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => {
+          setShowUpgradeModal(false);
+          router.push("/");
+        }}
+      />
     </div>
   );
 }

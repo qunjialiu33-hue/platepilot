@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
-import { mealAudits } from "@/db/schema";
+import { users, mealAudits } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
-const MODEL = "anthropic/claude-sonnet-4.5";
+const FREE_MONTHLY_LIMIT = 3;
+
+const MODEL = "claude-sonnet-4-20250514";
 
 function getOpenRouterClient() {
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -67,6 +70,46 @@ export async function POST(req: NextRequest) {
     // Get user authentication using Clerk
     const { userId } = await auth();
 
+    // Check usage limits for non-Pro users
+    if (userId) {
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId));
+
+      if (user) {
+        const now = new Date();
+        const resetDate = new Date(user.usageResetDate);
+
+        // Reset usage if more than 1 month has passed
+        if (now.getTime() - resetDate.getTime() > 30 * 24 * 60 * 60 * 1000) {
+          await db
+            .update(users)
+            .set({
+              usageCount: 0,
+              usageResetDate: now,
+            })
+            .where(eq(users.id, userId));
+          user.usageCount = 0;
+        }
+
+        // Check if Pro user
+        if (!user.isPro) {
+          // Check usage limit
+          if ((user.usageCount || 0) >= FREE_MONTHLY_LIMIT) {
+            return NextResponse.json(
+              {
+                error: "Monthly limit reached",
+                upgradeRequired: true,
+                remaining: 0,
+              },
+              { status: 403 }
+            );
+          }
+        }
+      }
+    }
+
     const body = await req.json();
     const { image } = body;
 
@@ -83,32 +126,46 @@ export async function POST(req: NextRequest) {
       : `data:image/jpeg;base64,${image}`;
 
     console.log("📡 正在调用 OpenRouter API...");
+    console.log("📡 使用模型:", MODEL);
 
     const client = getOpenRouterClient();
-    const response = await client.chat.completions.create({
-      model: MODEL,
-      messages: [
-        {
-          role: "system",
-          content: SYSTEM_PROMPT,
-        },
-        {
-          role: "user",
-          content: [
-            {
-              type: "image_url",
-              image_url: {
-                url: imageData,
-              },
-            },
-          ],
-        },
-      ],
-      max_tokens: 1024,
-      temperature: 0.7,
-    });
+    let response;
 
-    console.log("✅ OpenRouter API 调用成功!");
+    try {
+      response = await client.chat.completions.create({
+        model: MODEL,
+        messages: [
+          {
+            role: "system",
+            content: SYSTEM_PROMPT,
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "image_url",
+                image_url: {
+                  url: imageData,
+                },
+              },
+            ],
+          },
+        ],
+        max_tokens: 1024,
+        temperature: 0.7,
+      });
+
+      console.log("✅ OpenRouter API 调用成功!");
+      console.log("📦 原始响应:", JSON.stringify(response));
+
+    } catch (apiError: any) {
+      console.error("❌ OpenRouter API 调用失败:", apiError?.message || apiError);
+      console.error("❌ 错误详情:", JSON.stringify(apiError?.response?.data || apiError));
+      return NextResponse.json(
+        { error: "OpenRouter API failed", details: apiError?.message || String(apiError) },
+        { status: 500 }
+      );
+    }
 
     const content = response.choices?.[0]?.message?.content;
 
@@ -162,6 +219,21 @@ export async function POST(req: NextRequest) {
           actionTokens: analysisResult.actionTokens,
         },
       });
+
+      // Increment usage count for non-Pro users
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId));
+
+      if (user && !user.isPro) {
+        await db
+          .update(users)
+          .set({
+            usageCount: (user.usageCount || 0) + 1,
+          })
+          .where(eq(users.id, userId));
+      }
     }
 
     return NextResponse.json(analysisResult);

@@ -9,6 +9,10 @@ export const users = pgTable("users", {
   emailVerified: boolean("email_verified").default(false),
   passwordHash: varchar("password_hash", { length: 255 }),
   isPro: boolean("is_pro").default(false),
+  usageCount: integer("usage_count").default(0),
+  usageResetDate: timestamp("usage_reset_date").defaultNow().notNull(),
+  stripeCustomerId: varchar("stripe_customer_id", { length: 255 }),
+  stripeSubscriptionId: varchar("stripe_subscription_id", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
