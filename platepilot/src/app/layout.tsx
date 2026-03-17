@@ -26,6 +26,9 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "PlatePilot - Your Meal Audit Companion",
   description: "AI-powered meal audit assistant",
+  verification: {
+    google: "MjSe93YhxaWdsFGs7h4l8nEJK2AUEWMFN8VivWPM4NM",
+  },
 };
 
 export default function RootLayout({

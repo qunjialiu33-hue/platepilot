@@ -18,7 +18,7 @@ export default function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
   const handleUpgrade = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/stripe/checkout", {
+      const response = await fetch("/api/checkout", {
         method: "POST",
       });
 

@@ -1,4 +1,4 @@
-import { pgTable, varchar, boolean, timestamp, jsonb, integer, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, varchar, boolean, timestamp, jsonb, integer, text, primaryKey } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
@@ -59,10 +59,8 @@ export const verifications = pgTable("verifications", {
 
 export const mealAudits = pgTable("meal_audits", {
   id: varchar("id", { length: 255 }).$defaultFn(() => crypto.randomUUID()).primaryKey(),
-  userId: varchar("user_id", { length: 255 })
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  imageUrl: varchar("image_url", { length: 512 }),
+  userId: varchar("user_id", { length: 255 }).notNull(),
+  imageUrl: text("image_url"),
   score: integer("score"),
   resultJson: jsonb("result_json"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
