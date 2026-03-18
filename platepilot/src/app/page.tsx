@@ -9,7 +9,6 @@ const UserButtonWithNoSSR = dynamic(
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
 import { Camera, Upload, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUsageGuard } from "@/hooks/use-usage-guard";
@@ -17,7 +16,6 @@ import { LoginPromptModal, SubscribePromptModal } from "@/components/usage-limit
 
 export default function Home() {
   const router = useRouter();
-  const { isSignedIn } = useUser();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isLoading, setIsLoading] = useState(false);
