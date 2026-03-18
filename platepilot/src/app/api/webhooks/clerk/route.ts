@@ -51,28 +51,10 @@ export async function POST(req: Request) {
     const email = email_addresses[0]?.email_address;
     const name = first_name && last_name ? `${first_name} ${last_name}` : first_name || last_name || null;
 
-    // Check if user exists
-    const [existingUser] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, id));
-
-    if (existingUser) {
-      // Update existing user
-      await db
-        .update(users)
-        .set({
-          email: email || existingUser.email,
-          name: name || existingUser.name,
-          image: image_url || existingUser.image,
-          updatedAt: new Date(),
-        })
-        .where(eq(users.id, id));
-
-      console.log(`User ${id} updated`);
-    } else {
-      // Create new user
-      await db.insert(users).values({
+    // Upsert user: insert or update if exists
+    await db
+      .insert(users)
+      .values({
         id,
         email: email || "",
         name,
@@ -83,10 +65,18 @@ export async function POST(req: Request) {
         usageResetDate: new Date(),
         createdAt: new Date(),
         updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          email: email || "",
+          name,
+          image: image_url,
+          updatedAt: new Date(),
+        },
       });
 
-      console.log(`User ${id} created`);
-    }
+    console.log(`User ${id} upserted (created or updated)`);
   }
 
   if (eventType === "user.deleted") {

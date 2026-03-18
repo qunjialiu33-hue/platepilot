@@ -9,7 +9,7 @@ const UserButtonWithNoSSR = dynamic(
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, Upload, Loader2 } from "lucide-react";
+import { Camera, Upload, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUsageGuard } from "@/hooks/use-usage-guard";
 import { LoginPromptModal, SubscribePromptModal } from "@/components/usage-limit-modal";
@@ -23,7 +23,8 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showSubscribeModal, setShowSubscribeModal] = useState(false);
-  const { status, consume } = useUsageGuard();
+  const [isUpgrading, setIsUpgrading] = useState(false);
+  const { status, consume, isPro, isSignedIn } = useUsageGuard();
 
   // Start camera on mount
   useEffect(() => {
@@ -111,6 +112,27 @@ export default function Home() {
     reader.readAsDataURL(file);
   };
 
+  const handleUpgrade = async () => {
+    setIsUpgrading(true);
+    try {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+      });
+      const data = await response.json();
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert("无法创建订阅，请稍后重试");
+      }
+    } catch (error) {
+      console.error("Upgrade error:", error);
+      alert("创建订阅失败");
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
+
   const analyzeImage = async (imageData: string) => {
     setIsAnalyzing(true);
     setIsLoading(true);
@@ -153,7 +175,20 @@ export default function Home() {
           <h1 className="text-white text-2xl font-bold tracking-tight">PlatePilot</h1>
           <p className="text-white/70 text-sm">Your Meal Audit Companion</p>
         </div>
-        <UserButtonWithNoSSR />
+        <div className="flex items-center gap-3">
+          {/* 升级会员按钮 - 未登录或非Pro用户显示 */}
+          {!isPro && (
+            <Button
+              onClick={handleUpgrade}
+              disabled={isUpgrading}
+              className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium shadow-lg"
+            >
+              <Sparkles className="w-4 h-4 mr-1" />
+              {isUpgrading ? "加载中..." : "升级会员 $9.9/月"}
+            </Button>
+          )}
+          <UserButtonWithNoSSR />
+        </div>
       </div>
 
       {/* Usage Limit Modals */}

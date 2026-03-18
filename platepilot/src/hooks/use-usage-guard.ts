@@ -8,6 +8,8 @@ type UsageStatus = 'allowed' | 'blocked_login' | 'blocked_subscribe' | 'loading'
 interface UseUsageGuardReturn {
   status: UsageStatus;
   usedCount: number;
+  isPro: boolean;
+  isSignedIn: boolean;
   consume: () => Promise<void>;
 }
 
@@ -101,6 +103,8 @@ export function useUsageGuard(): UseUsageGuardReturn {
   return {
     status,
     usedCount,
+    isPro,
+    isSignedIn: isSignedIn || false,
     consume,
   };
 }

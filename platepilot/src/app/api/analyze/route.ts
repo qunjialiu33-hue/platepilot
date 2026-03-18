@@ -67,45 +67,36 @@ export async function POST(req: NextRequest) {
     const { userId } = await auth();
 
     // 服务端守卫逻辑
-    if (!userId) {
-      // 未登录：拒绝请求（前端已有限制，服务端再做一次验证）
-      console.log("⚠️ 未登录用户尝试调用 analyze API");
-      return NextResponse.json(
-        { error: "请先登录后使用" },
-        { status: 401 }
-      );
-    }
+    if (userId) {
+      // 已登录：检查订阅状态和使用次数
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId));
 
-    // 已登录：检查订阅状态和使用次数
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, userId));
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "用户不存在" },
-        { status: 404 }
-      );
-    }
-
-    // 如果是 Pro 用户，直接通过
-    if (user.isPro) {
-      console.log(`✅ Pro 用户 ${userId} 调用 analyze API`);
-    } else {
-      // 非 Pro 用户：检查使用次数
-      if ((user.usageCount || 0) >= FREE_MONTHLY_LIMIT) {
-        console.log(`⚠️ 用户 ${userId} 已达免费限额 (${user.usageCount}/${FREE_MONTHLY_LIMIT})`);
-        return NextResponse.json(
-          {
-            error: "免费次数已用完",
-            upgradeRequired: true,
-            usageCount: user.usageCount
-          },
-          { status: 429 }
-        );
+      if (user) {
+        // 如果是 Pro 用户，直接通过
+        if (user.isPro) {
+          console.log(`✅ Pro 用户 ${userId} 调用 analyze API`);
+        } else {
+          // 非 Pro 用户：检查使用次数
+          if ((user.usageCount || 0) >= FREE_MONTHLY_LIMIT) {
+            console.log(`⚠️ 用户 ${userId} 已达免费限额 (${user.usageCount}/${FREE_MONTHLY_LIMIT})`);
+            return NextResponse.json(
+              {
+                error: "免费次数已用完",
+                upgradeRequired: true,
+                usageCount: user.usageCount
+              },
+              { status: 429 }
+            );
+          }
+          console.log(`✅ 免费用户 ${userId} 调用 analyze API (${user.usageCount}/${FREE_MONTHLY_LIMIT})`);
+        }
       }
-      console.log(`✅ 免费用户 ${userId} 调用 analyze API (${user.usageCount}/${FREE_MONTHLY_LIMIT})`);
+    } else {
+      // 未登录：允许执行（前端已用 localStorage 控制3次限制）
+      console.log("ℹ️ 未登录用户调用 analyze API（前端 localStorage 控制次数）");
     }
 
     const body = await req.json();
@@ -134,25 +125,29 @@ export async function POST(req: NextRequest) {
 
     const analysisResult = JSON.parse(content) as AnalysisResponse;
 
-    // 3. 保存记录（注意：usageCount 已在前端的 consume() 中增加，这里不再重复增加）
-    console.log("🔍 DEBUG - userId:", userId);
-    console.log("🔍 DEBUG - insert data:", {
-      userId,
-      imageUrl: imageData,
-      score: analysisResult.score,
-      resultJson: analysisResult,
-    });
-
-    try {
-      await db.insert(mealAudits).values({
+    // 3. 保存记录（仅已登录用户保存到数据库）
+    if (userId) {
+      console.log("🔍 DEBUG - userId:", userId);
+      console.log("🔍 DEBUG - insert data:", {
         userId,
         imageUrl: imageData,
         score: analysisResult.score,
         resultJson: analysisResult,
       });
-      console.log("✅ meal_audits insert success");
-    } catch (err) {
-      console.error("❌ meal_audits insert error:", err);
+
+      try {
+        await db.insert(mealAudits).values({
+          userId,
+          imageUrl: imageData,
+          score: analysisResult.score,
+          resultJson: analysisResult,
+        });
+        console.log("✅ meal_audits insert success");
+      } catch (err) {
+        console.error("❌ meal_audits insert error:", err);
+      }
+    } else {
+      console.log("ℹ️ 未登录用户，不保存分析记录到数据库");
     }
 
     return NextResponse.json(analysisResult);

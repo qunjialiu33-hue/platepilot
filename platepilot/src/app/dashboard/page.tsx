@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
-import { Loader2, Settings, CheckCircle } from "lucide-react";
+import { Loader2, Settings, CheckCircle, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 interface Analysis {
@@ -29,6 +29,7 @@ export default function DashboardPage() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [isManaging, setIsManaging] = useState(false);
+  const [isUpgrading, setIsUpgrading] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   useEffect(() => {
@@ -47,23 +48,26 @@ export default function DashboardPage() {
   useEffect(() => {
     const success = searchParams.get("success");
     if (success === "true") {
-      console.log("✅ 支付成功，刷新用户状态");
+      console.log("✅ 支付成功，刷新页面数据");
       setShowSuccessMessage(true);
 
-      // 延迟刷新，确保 webhook 已处理
+      // 立即使用 router.refresh() 刷新页面数据
+      router.refresh();
+
+      // 同时也调用 API 刷新客户端状态
       setTimeout(() => {
         fetchDashboardData();
-      }, 2000);
+      }, 1000);
 
       // 清除 URL 参数
       const url = new URL(window.location.href);
       url.searchParams.delete("success");
       window.history.replaceState({}, "", url.toString());
 
-      // 5秒后隐藏成功消息
+      // 3秒后隐藏成功消息
       setTimeout(() => {
         setShowSuccessMessage(false);
-      }, 5000);
+      }, 3000);
     }
 
     const canceled = searchParams.get("canceled");
@@ -74,7 +78,7 @@ export default function DashboardPage() {
       url.searchParams.delete("canceled");
       window.history.replaceState({}, "", url.toString());
     }
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   const fetchDashboardData = async () => {
     try {
@@ -115,6 +119,27 @@ export default function DashboardPage() {
     }
   };
 
+  const handleUpgrade = async () => {
+    setIsUpgrading(true);
+    try {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+      });
+      const data = await response.json();
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert("无法创建订阅，请稍后重试");
+      }
+    } catch (error) {
+      console.error("Upgrade error:", error);
+      alert("创建订阅失败");
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
+
   if (!isLoaded || isLoadingData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -128,7 +153,7 @@ export default function DashboardPage() {
       <div className="max-w-4xl mx-auto">
         {/* 支付成功提示 */}
         {showSuccessMessage && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3 animate-in fade-in slide-in-from-top duration-300">
             <CheckCircle className="w-5 h-5 text-green-600" />
             <div>
               <p className="text-green-800 font-medium">订阅成功！</p>
@@ -151,7 +176,7 @@ export default function DashboardPage() {
             )}
           </div>
           <div className="flex gap-3">
-            {userData?.isPro && (
+            {userData?.isPro ? (
               <Button
                 variant="outline"
                 onClick={handleManageSubscription}
@@ -160,6 +185,15 @@ export default function DashboardPage() {
               >
                 <Settings className="w-4 h-4" />
                 {isManaging ? "加载中..." : "管理订阅"}
+              </Button>
+            ) : (
+              <Button
+                onClick={handleUpgrade}
+                disabled={isUpgrading}
+                className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold shadow-lg border-0"
+              >
+                <Sparkles className="w-4 h-4" />
+                {isUpgrading ? "加载中..." : "升级会员 $9.9/月"}
               </Button>
             )}
             <Link href="/">
