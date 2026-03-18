@@ -1,48 +1,180 @@
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
-import { db } from "@/db";
-import { mealAudits } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
+import { Button } from "@/components/ui/button";
+import { Loader2, Settings, CheckCircle } from "lucide-react";
 import Link from "next/link";
 
-export const dynamic = "force-dynamic";
+interface Analysis {
+  id: string;
+  userId: string;
+  imageUrl: string | null;
+  score: number | null;
+  resultJson: unknown;
+  createdAt: Date;
+}
 
-export default async function DashboardPage() {
-  const { userId } = await auth();
+interface UserData {
+  isPro: boolean;
+  usageCount: number;
+}
 
-  if (!userId) {
-    redirect("/sign-in");
+export default function DashboardPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { isSignedIn, isLoaded } = useUser();
+  const [analyses, setAnalyses] = useState<Analysis[]>([]);
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [isManaging, setIsManaging] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      router.push("/sign-in");
+    }
+  }, [isLoaded, isSignedIn, router]);
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      fetchDashboardData();
+    }
+  }, [isLoaded, isSignedIn]);
+
+  // 检测支付成功并刷新状态
+  useEffect(() => {
+    const success = searchParams.get("success");
+    if (success === "true") {
+      console.log("✅ 支付成功，刷新用户状态");
+      setShowSuccessMessage(true);
+
+      // 延迟刷新，确保 webhook 已处理
+      setTimeout(() => {
+        fetchDashboardData();
+      }, 2000);
+
+      // 清除 URL 参数
+      const url = new URL(window.location.href);
+      url.searchParams.delete("success");
+      window.history.replaceState({}, "", url.toString());
+
+      // 5秒后隐藏成功消息
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 5000);
+    }
+
+    const canceled = searchParams.get("canceled");
+    if (canceled === "true") {
+      console.log("⚠️ 支付已取消");
+      // 清除 URL 参数
+      const url = new URL(window.location.href);
+      url.searchParams.delete("canceled");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [searchParams]);
+
+  const fetchDashboardData = async () => {
+    try {
+      // Fetch user data
+      const userResponse = await fetch("/api/usage");
+      const userData = await userResponse.json();
+      setUserData(userData);
+
+      // Fetch analyses (you'll need to create this API endpoint)
+      const analysesResponse = await fetch("/api/analyses");
+      if (analysesResponse.ok) {
+        const analysesData = await analysesResponse.json();
+        setAnalyses(analysesData);
+      }
+    } catch (error) {
+      console.error("Failed to fetch dashboard data:", error);
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    setIsManaging(true);
+    try {
+      const response = await fetch("/api/payment/manage");
+      const data = await response.json();
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert("无法获取管理链接，请稍后重试");
+      }
+    } catch (error) {
+      console.error("Manage subscription error:", error);
+      alert("获取管理链接失败");
+    } finally {
+      setIsManaging(false);
+    }
+  };
+
+  if (!isLoaded || isLoadingData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+      </div>
+    );
   }
-
-  // Get user's analysis history using Clerk userId
-  const analyses = await db
-    .select()
-    .from(mealAudits)
-    .where(eq(mealAudits.userId, userId))
-    .orderBy(desc(mealAudits.createdAt))
-    .limit(50);
 
   return (
     <div className="min-h-screen p-8 bg-gray-50">
       <div className="max-w-4xl mx-auto">
+        {/* 支付成功提示 */}
+        {showSuccessMessage && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
+            <CheckCircle className="w-5 h-5 text-green-600" />
+            <div>
+              <p className="text-green-800 font-medium">订阅成功！</p>
+              <p className="text-green-600 text-sm">您现在可以享受无限次分析</p>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">Your Meal History</h1>
-          <Link
-            href="/"
-            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900"
-          >
-            Back to Home
-          </Link>
+          <div>
+            <h1 className="text-3xl font-bold">Your Meal History</h1>
+            {userData && (
+              <p className="text-sm text-gray-600 mt-1">
+                {userData.isPro ? (
+                  <span className="text-amber-600 font-medium">⭐ Pro 会员</span>
+                ) : (
+                  <span>已使用 {userData.usageCount}/3 次免费分析</span>
+                )}
+              </p>
+            )}
+          </div>
+          <div className="flex gap-3">
+            {userData?.isPro && (
+              <Button
+                variant="outline"
+                onClick={handleManageSubscription}
+                disabled={isManaging}
+                className="flex items-center gap-2"
+              >
+                <Settings className="w-4 h-4" />
+                {isManaging ? "加载中..." : "管理订阅"}
+              </Button>
+            )}
+            <Link href="/">
+              <Button variant="outline">返回首页</Button>
+            </Link>
+          </div>
         </div>
 
         {analyses.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500 mb-4">No analyses yet</p>
-            <Link
-              href="/"
-              className="inline-block px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800"
-            >
-              Analyze Your First Meal
+            <p className="text-gray-500 mb-4">暂无分析记录</p>
+            <Link href="/">
+              <Button className="bg-black text-white hover:bg-gray-800">
+                开始第一次分析
+              </Button>
             </Link>
           </div>
         ) : (
@@ -70,7 +202,7 @@ export default async function DashboardPage() {
                       </span>
                       <span className="text-gray-500">
                         {new Date(analysis.createdAt).toLocaleDateString(
-                          "en-US",
+                          "zh-CN",
                           {
                             month: "short",
                             day: "numeric",
@@ -85,7 +217,7 @@ export default async function DashboardPage() {
                       analysis.resultJson !== null &&
                       "headline" in analysis.resultJson
                         ? (analysis.resultJson as { headline: string }).headline
-                        : "Analysis"}
+                        : "分析报告"}
                     </h3>
                   </div>
                 </div>

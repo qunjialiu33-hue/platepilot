@@ -66,24 +66,47 @@ export async function POST(req: NextRequest) {
 
     const { userId } = await auth();
 
-    // 1. 处理用户额度和数据库逻辑（暂时跳过订阅检查）
-    // if (userId) {
-    //   try {
-    //     const [user] = await db.select().from(users).where(eq(users.id, userId));
-    //     if (user) {
-    //       const now = new Date();
-    //       const resetDate = new Date(user.usageResetDate || now);
-    //       if (now.getTime() - resetDate.getTime() > 30 * 24 * 60 * 60 * 1000) {
-    //         await db.update(users).set({ usageCount: 0, usageResetDate: now }).where(eq(users.id, userId));
-    //       }
-    //       if (!user.isPro && (user.usageCount || 0) >= FREE_MONTHLY_LIMIT) {
-    //         return NextResponse.json({ error: "Monthly limit reached", upgradeRequired: true }, { status: 403 });
-    //       }
-    //     }
-    //   } catch (err) {
-    //     console.error("User query error:", err);
-    //   }
-    // }
+    // 服务端守卫逻辑
+    if (!userId) {
+      // 未登录：拒绝请求（前端已有限制，服务端再做一次验证）
+      console.log("⚠️ 未登录用户尝试调用 analyze API");
+      return NextResponse.json(
+        { error: "请先登录后使用" },
+        { status: 401 }
+      );
+    }
+
+    // 已登录：检查订阅状态和使用次数
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId));
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "用户不存在" },
+        { status: 404 }
+      );
+    }
+
+    // 如果是 Pro 用户，直接通过
+    if (user.isPro) {
+      console.log(`✅ Pro 用户 ${userId} 调用 analyze API`);
+    } else {
+      // 非 Pro 用户：检查使用次数
+      if ((user.usageCount || 0) >= FREE_MONTHLY_LIMIT) {
+        console.log(`⚠️ 用户 ${userId} 已达免费限额 (${user.usageCount}/${FREE_MONTHLY_LIMIT})`);
+        return NextResponse.json(
+          {
+            error: "免费次数已用完",
+            upgradeRequired: true,
+            usageCount: user.usageCount
+          },
+          { status: 429 }
+        );
+      }
+      console.log(`✅ 免费用户 ${userId} 调用 analyze API (${user.usageCount}/${FREE_MONTHLY_LIMIT})`);
+    }
 
     const body = await req.json();
     const { image } = body;
@@ -111,7 +134,7 @@ export async function POST(req: NextRequest) {
 
     const analysisResult = JSON.parse(content) as AnalysisResponse;
 
-    // 3. 保存记录并增加使用次数
+    // 3. 保存记录（注意：usageCount 已在前端的 consume() 中增加，这里不再重复增加）
     console.log("🔍 DEBUG - userId:", userId);
     console.log("🔍 DEBUG - insert data:", {
       userId,
@@ -120,27 +143,16 @@ export async function POST(req: NextRequest) {
       resultJson: analysisResult,
     });
 
-    if (userId) {
-      try {
-        await db.insert(mealAudits).values({
-          userId,
-          imageUrl: imageData,
-          score: analysisResult.score,
-          resultJson: analysisResult,
-        });
-        console.log("✅ meal_audits insert success");
-      } catch (err) {
-        console.error("❌ meal_audits insert error:", err);
-      }
-
-      try {
-        const [user] = await db.select().from(users).where(eq(users.id, userId));
-        if (user && !user.isPro) {
-          await db.update(users).set({ usageCount: (user.usageCount || 0) + 1 }).where(eq(users.id, userId));
-        }
-      } catch (err) {
-        console.error("Usage count update error:", err);
-      }
+    try {
+      await db.insert(mealAudits).values({
+        userId,
+        imageUrl: imageData,
+        score: analysisResult.score,
+        resultJson: analysisResult,
+      });
+      console.log("✅ meal_audits insert success");
+    } catch (err) {
+      console.error("❌ meal_audits insert error:", err);
     }
 
     return NextResponse.json(analysisResult);

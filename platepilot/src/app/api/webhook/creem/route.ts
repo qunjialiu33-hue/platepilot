@@ -7,6 +7,11 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
+    // Log the complete webhook body for debugging
+    console.log("=== Creem Webhook 完整 Body ===");
+    console.log(JSON.stringify(body, null, 2));
+    console.log("==============================");
+
     // Verify the webhook signature (optional, recommended for production)
     const webhookSecret = process.env.CREEM_WEBHOOK_SECRET;
     const signature = req.headers.get("x-signature");
@@ -27,13 +32,46 @@ export async function POST(req: NextRequest) {
       case "subscription_created": {
         const userId = body.user_id;
 
+        // Try to get subscription_id from different possible locations
+        const subscriptionId =
+          body.subscription_id ||
+          body.data?.subscription_id ||
+          body.subscriptionId ||
+          body.data?.subscriptionId ||
+          null;
+
+        console.log("🔍 Extracting subscription_id from Creem webhook:");
+        console.log("  - body.subscription_id:", body.subscription_id);
+        console.log("  - body.data?.subscription_id:", body.data?.subscription_id);
+        console.log("  - body.subscriptionId:", body.subscriptionId);
+        console.log("  - body.data?.subscriptionId:", body.data?.subscriptionId);
+        console.log("  - Final subscriptionId:", subscriptionId);
+
         if (userId) {
+          const updateData: {
+            isPro: boolean;
+            stripeSubscriptionId?: string | null;
+            updatedAt: Date;
+          } = {
+            isPro: true,
+            updatedAt: new Date(),
+          };
+
+          if (subscriptionId) {
+            updateData.stripeSubscriptionId = subscriptionId;
+            console.log(`✅ Saving subscription ID: ${subscriptionId} for user ${userId}`);
+          } else {
+            console.warn(`⚠️ No subscription_id found in webhook for user ${userId}`);
+          }
+
           await db
             .update(users)
-            .set({ isPro: true })
+            .set(updateData)
             .where(eq(users.id, userId));
 
-          console.log(`User ${userId} upgraded to Pro via Creem`);
+          console.log(`✅ User ${userId} upgraded to Pro via Creem`);
+        } else {
+          console.error("❌ Missing user_id in webhook body");
         }
         break;
       }
