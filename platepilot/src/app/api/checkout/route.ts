@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import { db } from "@/db";
-import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { auth, currentUser } from "@clerk/nextjs/server";
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,6 +13,20 @@ export async function POST(req: NextRequest) {
 
     console.log("✅ 用户 ID:", userId);
 
+    // 从 Clerk 获取用户邮箱
+    const clerkUser = await currentUser();
+    const userEmail = clerkUser?.emailAddresses?.[0]?.emailAddress;
+
+    if (!userEmail) {
+      console.error("❌ 用户邮箱未找到");
+      return NextResponse.json(
+        { error: "用户邮箱未找到，请检查 Clerk 账户信息" },
+        { status: 400 }
+      );
+    }
+
+    console.log("✅ 用户邮箱 (from Clerk):", userEmail);
+
     const creemApiKey = process.env.CREEM_API_KEY;
     if (!creemApiKey) {
       console.error("❌ CREEM_API_KEY 环境变量未配置");
@@ -25,16 +36,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log("✅ Creem API Key 已配置，长度:", creemApiKey.length);
-
-    // Get user info for email
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, userId));
-
-    const userEmail = user?.email;
-    console.log("✅ 用户邮箱:", userEmail);
+    console.log("✅ Creem API Key 已配置");
 
     // 构建请求体
     const requestBody = {
