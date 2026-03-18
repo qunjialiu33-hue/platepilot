@@ -45,27 +45,19 @@ export async function POST(req: NextRequest) {
     console.log("📦 Webhook Body:", JSON.stringify(body, null, 2));
 
     // Handle different event types
-    const eventType = body.event;
+    const eventType = body.eventType;
     console.log("📌 事件类型:", eventType);
     console.log("收到webhook事件:", eventType, JSON.stringify(body));
 
     switch (eventType) {
       case "checkout.completed": {
-        const userId = body.user_id || body.metadata?.userId;
+        const userId = body.object?.metadata?.userId;
 
-        // Try to get subscription_id from different possible locations
-        const subscriptionId =
-          body.subscription_id ||
-          body.data?.subscription_id ||
-          body.subscriptionId ||
-          body.data?.subscriptionId ||
-          null;
+        // Get subscription_id from body.object?.order?.id
+        const subscriptionId = body.object?.order?.id || null;
 
         console.log("🔍 Extracting subscription_id from Creem webhook:");
-        console.log("  - body.subscription_id:", body.subscription_id);
-        console.log("  - body.data?.subscription_id:", body.data?.subscription_id);
-        console.log("  - body.subscriptionId:", body.subscriptionId);
-        console.log("  - body.data?.subscriptionId:", body.data?.subscriptionId);
+        console.log("  - body.object?.order?.id:", body.object?.order?.id);
         console.log("  - Final subscriptionId:", subscriptionId);
 
         if (userId) {
@@ -98,7 +90,7 @@ export async function POST(req: NextRequest) {
       }
 
       case "subscription.canceled": {
-        const userId = body.user_id;
+        const userId = body.object?.metadata?.userId;
 
         if (userId) {
           await db
