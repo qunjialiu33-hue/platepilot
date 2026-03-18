@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || "https://platepilot-sigma.vercel.app"}/dashboard?canceled=true`,
     }, null, 2));
 
-    const response = await fetch("https://api.creem.io/v1/checkout", {
+    const response = await fetch("https://test-api.creem.io/v1/checkouts", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -74,8 +74,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log("✅ Checkout session 创建成功, URL:", data.url);
-    return NextResponse.json({ url: data.url });
+    console.log("✅ Checkout session 创建成功, URL:", data.checkout_url);
+    return NextResponse.json({ url: data.checkout_url });
   } catch (error) {
     console.error("❌ Checkout error:", error);
     return NextResponse.json(

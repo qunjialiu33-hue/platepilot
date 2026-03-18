@@ -2,34 +2,55 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    // Get raw body as text for signature verification
+    const rawBody = await req.text();
 
     // Log the complete webhook body for debugging
-    console.log("=== Creem Webhook 完整 Body ===");
-    console.log(JSON.stringify(body, null, 2));
-    console.log("==============================");
+    console.log("=== Creem Webhook 接收 ===");
+    console.log("Raw body:", rawBody);
 
-    // Verify the webhook signature (optional, recommended for production)
+    // Verify the webhook signature using HMAC-SHA256
     const webhookSecret = process.env.CREEM_WEBHOOK_SECRET;
-    const signature = req.headers.get("x-signature");
+    const signature = req.headers.get("creem-signature");
 
-    if (webhookSecret && signature !== webhookSecret) {
-      console.error("Invalid webhook signature");
-      return NextResponse.json(
-        { error: "Invalid signature" },
-        { status: 401 }
-      );
+    if (webhookSecret) {
+      const expectedSignature = crypto
+        .createHmac("sha256", webhookSecret)
+        .update(rawBody)
+        .digest("hex");
+
+      console.log("🔐 签名验证:");
+      console.log("  - 收到的签名:", signature);
+      console.log("  - 期望的签名:", expectedSignature);
+
+      if (signature !== expectedSignature) {
+        console.error("❌ Invalid webhook signature");
+        return NextResponse.json(
+          { error: "Invalid signature" },
+          { status: 401 }
+        );
+      }
+
+      console.log("✅ 签名验证通过");
+    } else {
+      console.warn("⚠️ CREEM_WEBHOOK_SECRET 未配置，跳过签名验证");
     }
+
+    // Parse JSON after signature verification
+    const body = JSON.parse(rawBody);
+    console.log("📦 Webhook Body:", JSON.stringify(body, null, 2));
 
     // Handle different event types
     const eventType = body.event;
+    console.log("📌 事件类型:", eventType);
 
     switch (eventType) {
-      case "payment_completed":
-      case "subscription_created": {
+      case "checkout.completed":
+      case "subscription.created": {
         const userId = body.user_id;
 
         // Try to get subscription_id from different possible locations
@@ -76,28 +97,27 @@ export async function POST(req: NextRequest) {
         break;
       }
 
-      case "subscription_cancelled":
-      case "subscription_expired": {
+      case "subscription.canceled": {
         const userId = body.user_id;
 
         if (userId) {
           await db
             .update(users)
-            .set({ isPro: false })
+            .set({ isPro: false, updatedAt: new Date() })
             .where(eq(users.id, userId));
 
-          console.log(`User ${userId} subscription cancelled`);
+          console.log(`✅ User ${userId} subscription canceled`);
         }
         break;
       }
 
       default:
-        console.log(`Unhandled Creem event: ${eventType}`);
+        console.log(`ℹ️ Unhandled Creem event: ${eventType}`);
     }
 
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error("Webhook error:", error);
+    console.error("❌ Webhook error:", error);
     return NextResponse.json(
       { error: "Webhook handler failed" },
       { status: 500 }
