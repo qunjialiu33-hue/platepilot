@@ -47,11 +47,11 @@ export async function POST(req: NextRequest) {
     // Handle different event types
     const eventType = body.event;
     console.log("📌 事件类型:", eventType);
+    console.log("收到webhook事件:", eventType, JSON.stringify(body));
 
     switch (eventType) {
-      case "checkout.completed":
-      case "subscription.created": {
-        const userId = body.user_id;
+      case "checkout.completed": {
+        const userId = body.user_id || body.metadata?.userId;
 
         // Try to get subscription_id from different possible locations
         const subscriptionId =
