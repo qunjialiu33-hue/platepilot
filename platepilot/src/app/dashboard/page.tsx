@@ -120,6 +120,13 @@ export default function DashboardPage() {
   };
 
   const handleUpgrade = async () => {
+    // 未登录：跳转到登录页
+    if (!isSignedIn) {
+      router.push("/sign-in?redirect_url=/dashboard");
+      return;
+    }
+
+    // 已登录：调用 API 创建订阅
     setIsUpgrading(true);
     try {
       const response = await fetch("/api/checkout", {
