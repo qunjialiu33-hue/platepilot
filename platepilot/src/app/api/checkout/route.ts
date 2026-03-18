@@ -37,13 +37,13 @@ export async function POST(req: NextRequest) {
     console.log("✅ 用户邮箱:", userEmail);
 
     // Create checkout session via Creem API
-    console.log("📡 调用 Creem API, price_id:", process.env.CREEM_PRICE_ID);
+    console.log("📡 调用 Creem API, product_id:", process.env.CREEM_PRODUCT_ID);
     console.log("📡 请求数据:", JSON.stringify({
-      price_id: process.env.CREEM_PRICE_ID,
+      product_id: process.env.CREEM_PRODUCT_ID,
       user_id: userId,
       email: userEmail,
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard?canceled=true`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL || "https://platepilot-sigma.vercel.app"}/dashboard?success=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || "https://platepilot-sigma.vercel.app"}/dashboard?canceled=true`,
     }, null, 2));
 
     const response = await fetch("https://api.creem.io/v1/checkout", {
@@ -53,11 +53,11 @@ export async function POST(req: NextRequest) {
         "x-api-key": creemApiKey,
       },
       body: JSON.stringify({
-        price_id: process.env.CREEM_PRICE_ID,
+        product_id: process.env.CREEM_PRODUCT_ID,
         user_id: userId,
         email: userEmail,
-        success_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard?success=true`,
-        cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard?canceled=true`,
+        success_url: `${process.env.NEXT_PUBLIC_APP_URL || "https://platepilot-sigma.vercel.app"}/dashboard?success=true`,
+        cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || "https://platepilot-sigma.vercel.app"}/dashboard?canceled=true`,
       }),
     });
 
