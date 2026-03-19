@@ -43,7 +43,30 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const { status, consume, isSignedIn } = useUsageGuard();
 
-  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const maxSize = 1024;
+        let w = img.width;
+        let h = img.height;
+        if (w > maxSize || h > maxSize) {
+          if (w > h) { h = (h / w) * maxSize; w = maxSize; }
+          else { w = (w / h) * maxSize; h = maxSize; }
+        }
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d')?.drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      };
+      img.src = url;
+    });
+  };
+
+  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (isAnalyzing) return;
@@ -51,14 +74,10 @@ export default function Home() {
     if (status === "blocked_login") { setShowLoginModal(true); return; }
     if (status === "blocked_subscribe") { setShowSubscribeModal(true); return; }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const data = event.target?.result as string;
-      setImageData(data);
-      setStep(2);
-      analyzeImage(data);
-    };
-    reader.readAsDataURL(file);
+    const data = await compressImage(file);
+    setImageData(data);
+    setStep(2);
+    analyzeImage(data);
   };
 
   const analyzeImage = async (data: string) => {
