@@ -2,19 +2,15 @@ import type { Metadata, Viewport } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 
 export const dynamic = "force-dynamic";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import { Providers } from "@/components/Providers";
 import { ClerkSync } from "@/components/clerk-sync";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  weight: ["400", "600", "700", "800"],
+  variable: "--font-plus-jakarta",
 });
 
 export const viewport: Viewport = {
@@ -41,7 +37,8 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+          className={`${plusJakarta.variable} font-sans antialiased`}
+          style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
           <ClerkSync />
           <Providers>{children}</Providers>

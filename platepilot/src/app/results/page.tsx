@@ -84,78 +84,136 @@ function ResultsContent() {
     }
   }, [imageData]);
 
-  const getScoreBg = (score: number) => {
-    if (score < 60) return "bg-red-500";
-    if (score < 80) return "bg-amber-500";
-    return "bg-emerald-500";
+  const getScoreLevel = (score: number) => {
+    if (score >= 80) return "S级料理人";
+    if (score >= 60) return "还需努力";
+    return "垃圾食品";
   };
 
   if (!imageData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-50">
-        <p className="text-zinc-500">No image data. Please take a photo first.</p>
+      <div className="min-h-screen bg-[#0F1115] flex items-center justify-center">
+        <p className="text-white/40">请先拍摄照片</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-      {/* Header */}
-      <header className="sticky top-0 z-20 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 px-4 py-3 flex items-center justify-between">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.push("/")}
-          className="rounded-full"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <h1 className="text-lg font-semibold">Audit Results</h1>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.push("/")}
-          className="rounded-full"
-        >
-          <Camera className="w-5 h-5" />
-        </Button>
-      </header>
+    <div className="min-h-screen bg-[#0F1115] text-[#F8FAF0]">
+      {/* Sticky Top Navigation */}
+      <div className="sticky top-0 z-50 backdrop-blur-xl bg-[#0F1115]/80">
+        <div className="px-6 py-4 flex items-center justify-between">
+          {/* Back Button */}
+          <button
+            onClick={() => router.push("/")}
+            className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center"
+          >
+            <ArrowLeft className="w-5 h-5 text-white" />
+          </button>
+          {/* Right: Logo */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500 flex items-center justify-center">
+              <span className="text-lg">🐾</span>
+            </div>
+          </div>
+        </div>
+        {/* Progress Bar - All Active */}
+        <div className="flex gap-2 px-6 pb-4">
+          <div className="flex-1 h-1 rounded-full bg-emerald-400"></div>
+          <div className="flex-1 h-1 rounded-full bg-emerald-400"></div>
+          <div className="flex-1 h-1 rounded-full bg-emerald-400"></div>
+          <div className="flex-1 h-1 rounded-full bg-emerald-400"></div>
+        </div>
+      </div>
 
-      {error ? (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 p-4">
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 max-w-sm w-full text-center">
-            <p className="text-red-600 dark:text-red-400 font-medium mb-4">{error}</p>
-            <Button onClick={() => router.push("/")} className="bg-red-600 hover:bg-red-700 text-white">
-              Try Again
-            </Button>
+      {/* Loading State - Scanning */}
+      {isAnalyzing && (
+        <div className="px-6 py-8">
+          <h2 className="text-2xl font-extrabold mb-2">正在视觉解析...</h2>
+          <p className="text-sm text-white/40 mb-6">神经网络识别食材中</p>
+
+          {/* Image with Scan Line */}
+          <div className="relative rounded-[2.5rem] overflow-hidden bg-[#1C1F26] aspect-[4/3] mb-6">
+            <img
+              src={imageData}
+              alt="Plate photo"
+              className="w-full h-full object-cover"
+            />
+            {/* Green Scan Line */}
+            <div
+              className="absolute left-0 right-0 h-1 bg-[#37D192]"
+              style={{
+                boxShadow: "0 0 15px #37D192",
+                animation: "scanLine 2s linear infinite",
+              }}
+            ></div>
+            <style jsx>{`
+              @keyframes scanLine {
+                0% { top: 0; }
+                100% { top: 100%; }
+              }
+            `}</style>
           </div>
         </div>
-      ) : isAnalyzing ? (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-          <div className="relative w-32 h-32">
-            <div className={`absolute inset-0 rounded-full ${getScoreBg(50)} opacity-20 animate-pulse`}></div>
-            <div className={`absolute inset-2 rounded-full ${getScoreBg(50)} opacity-40 animate-pulse delay-75`}></div>
-            <div className={`absolute inset-4 rounded-full ${getScoreBg(50)} opacity-60 animate-pulse delay-150`}></div>
+      )}
+
+      {/* Error State */}
+      {error && !isAnalyzing && (
+        <div className="px-6 py-8">
+          <div className="bg-red-500/20 border border-red-500/50 rounded-2xl p-6 text-center">
+            <p className="text-red-400 font-medium mb-4">{error}</p>
+            <button
+              onClick={() => router.push("/")}
+              className="px-6 py-3 bg-red-500 text-white rounded-xl font-medium"
+            >
+              重新拍摄
+            </button>
           </div>
-          <p className="text-zinc-600 dark:text-zinc-400 font-medium">AI is analyzing your plate...</p>
         </div>
-      ) : result ? (
-        <div className="p-4 space-y-4">
+      )}
+
+      {/* Result State */}
+      {result && !isAnalyzing && (
+        <div className="px-6 py-8">
           {/* Score Card */}
-          <Card className="overflow-hidden">
-            <CardContent className="p-0">
-              <div className={`${getScoreBg(result.score)} p-8 text-white text-center`}>
-                <p className="text-sm font-medium opacity-90 mb-2">Diet Health Score</p>
-                <p className="text-8xl font-bold tracking-tight">{result.score}</p>
-                <p className="text-3xl font-bold mt-4 opacity-95">
-                  {result.headline}
-                </p>
+          <div className="bg-[#1C1F26] rounded-[2.5rem] p-8 mb-6">
+            <div className="flex flex-col items-center">
+              {/* SVG Circle Progress */}
+              <div className="relative w-40 h-40 mb-4">
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle
+                    cx="80"
+                    cy="80"
+                    r="40"
+                    stroke="white"
+                    strokeWidth="8"
+                    fill="none"
+                    className="opacity-20"
+                  />
+                  <circle
+                    cx="80"
+                    cy="80"
+                    r="40"
+                    stroke="#37D192"
+                    strokeWidth="8"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeDasharray={251.2}
+                    strokeDashoffset={251.2 - (result.score / 100) * 251.2}
+                    className="transition-all duration-1000"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-6xl font-black text-[#37D192]">{result.score}</span>
+                </div>
               </div>
-            </CardContent>
-          </Card>
+              {/* Level Text */}
+              <p className="text-xl font-extrabold text-white">{getScoreLevel(result.score)}</p>
+            </div>
+          </div>
 
           {/* Image */}
-          <div className="relative rounded-xl overflow-hidden bg-zinc-900">
+          <div className="relative rounded-[2.5rem] overflow-hidden bg-[#1C1F26] mb-6">
             <img
               src={imageData}
               alt="Plate photo"
@@ -163,67 +221,71 @@ function ResultsContent() {
             />
           </div>
 
+          {/* Headline - Toxic Comment */}
+          <div className="bg-emerald-400 text-black p-8 rounded-[2.5rem] mb-6">
+            <p className="text-xl font-extrabold leading-relaxed">
+              {result.headline}
+            </p>
+          </div>
+
           {/* Food Items */}
           {result.items && result.items.length > 0 && (
-            <Card>
-              <CardContent className="p-4 space-y-3">
-                <p className="text-sm font-medium text-zinc-500">Food Details</p>
-                {result.items.map((item, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <span className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
-                      item.status === "good" ? "bg-emerald-500" :
-                      item.status === "warning" ? "bg-amber-500" : "bg-red-500"
-                    }`} />
-                    <div className="flex-1">
-                      <p className="font-medium text-zinc-900 dark:text-zinc-100">
-                        {item.name}
-                        <span className={`ml-2 text-xs ${
-                          item.status === "good" ? "text-emerald-500" :
-                          item.status === "warning" ? "text-amber-500" : "text-red-500"
-                        }`}>
-                          {item.status === "good" ? "✓ Good" : item.status === "warning" ? "⚠ Warning" : "✗ Needs More"}
-                        </span>
-                      </p>
-                      <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                        {item.instruction}
-                      </p>
-                    </div>
+            <div className="space-y-3 mb-6">
+              {result.items.map((item, index) => (
+                <div key={index} className="flex items-start gap-3 bg-[#1C1F26] p-4 rounded-2xl">
+                  <span className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
+                    item.status === "good" ? "bg-emerald-400" :
+                    item.status === "warning" ? "bg-amber-400" : "bg-red-400"
+                  }`} />
+                  <div className="flex-1">
+                    <p className="font-bold text-white">
+                      {item.name}
+                      <span className={`ml-2 text-xs font-medium ${
+                        item.status === "good" ? "text-emerald-400" :
+                        item.status === "warning" ? "text-amber-400" : "text-red-400"
+                      }`}>
+                        {item.status === "good" ? "✓ 优秀" : item.status === "warning" ? "⚠ 注意" : "✗ 需改进"}
+                      </span>
+                    </p>
+                    <p className="text-sm text-white/50 mt-1">
+                      {item.instruction}
+                    </p>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
+                </div>
+              ))}
+            </div>
           )}
 
-          {/* Action Tokens - Large & Bold */}
-          <Card className="border-2 border-zinc-900 dark:border-zinc-100">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-3">
-                <Info className="w-6 h-6 text-zinc-900 dark:text-zinc-100 flex-shrink-0 mt-1" />
-                <div>
-                  <p className="text-sm font-medium text-zinc-500 mb-1">Action Items</p>
-                  <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 leading-tight">
-                    {result.actionTokens}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Action Tokens */}
+          {result.actionTokens && (
+            <div className="bg-[#1C1F26] p-6 rounded-[2.5rem] mb-6">
+              <p className="text-xs text-white/40 uppercase tracking-widest mb-2">建议</p>
+              <p className="text-lg font-bold text-white">{result.actionTokens}</p>
+            </div>
+          )}
 
-          {/* Disclaimer */}
-          <p className="text-xs text-zinc-400 text-center px-4">
-            This assessment is for reference only and does not constitute medical advice. Please consult your doctor for personalized dietary recommendations.
-          </p>
+          {/* Upgrade Button */}
+          <button
+            onClick={() => router.push("/sign-in?redirect_url=/dashboard")}
+            className="w-full py-5 rounded-3xl bg-white text-black font-black text-lg mb-4"
+          >
+            ⚡ 升级 PRO 解锁完整方案
+          </button>
 
           {/* Retry Button */}
-          <Button
+          <button
             onClick={() => router.push("/")}
-            className="w-full h-14 text-lg font-semibold bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:text-zinc-900"
+            className="w-full py-4 rounded-3xl bg-white/5 text-white/60 font-bold"
           >
-            <RefreshCw className="w-5 h-5 mr-2" />
-            Audit Another Plate
-          </Button>
+            再次审计
+          </button>
+
+          {/* Disclaimer */}
+          <p className="text-xs text-white/30 text-center mt-6 px-4">
+            本评估仅供参考，不构成医学建议。请咨询医生获取个性化饮食建议。
+          </p>
         </div>
-      ) : null}
+      )}
 
       {/* Upgrade Modal */}
       <UpgradeModal

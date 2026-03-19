@@ -166,37 +166,86 @@ export default function Home() {
   };
 
   return (
-    <div className="relative min-h-screen w-full bg-black overflow-hidden">
-      {/* Camera Video */}
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        className="absolute inset-0 w-full h-full object-cover"
-      />
-
-      {/* Top Overlay - Brand */}
-      <div className="absolute top-0 left-0 right-0 p-6 bg-gradient-to-b from-black/60 to-transparent z-10 flex justify-between items-start">
-        <div>
-          <h1 className="text-white text-2xl font-bold tracking-tight">PlatePilot</h1>
-          <p className="text-white/70 text-sm">Your Meal Audit Companion</p>
-        </div>
-        <div className="flex items-center gap-3">
-          {/* 升级会员按钮 - 未登录或非Pro用户显示 */}
-          {!isPro && (
-            <Button
-              onClick={handleUpgrade}
-              disabled={isUpgrading}
-              className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium shadow-lg"
-            >
-              <Sparkles className="w-4 h-4 mr-1" />
-              {isUpgrading ? "加载中..." : "升级会员 $9.9/月"}
-            </Button>
-          )}
+    <div className="min-h-screen bg-[#0F1115] text-[#F8FAF0]">
+      {/* Sticky Top Navigation */}
+      <div className="sticky top-0 z-50 backdrop-blur-xl bg-[#0F1115]/80">
+        <div className="px-6 py-4 flex items-center justify-between">
+          {/* Left: Logo */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500 flex items-center justify-center">
+              <span className="text-lg">🐾</span>
+            </div>
+            <div>
+              <p className="font-black text-lg leading-none">PlatePilot</p>
+              <p className="text-[10px] text-white/30 uppercase tracking-widest">AI Auditor</p>
+            </div>
+          </div>
+          {/* Right: UserButton */}
           <UserButtonWithNoSSR />
         </div>
+        {/* Progress Bar */}
+        <div className="flex gap-2 px-6 pb-4">
+          <div className="flex-1 h-1 rounded-full bg-emerald-400"></div>
+          <div className="flex-1 h-1 rounded-full bg-white/10"></div>
+          <div className="flex-1 h-1 rounded-full bg-white/10"></div>
+          <div className="flex-1 h-1 rounded-full bg-white/10"></div>
+        </div>
       </div>
+
+      {/* Main Content */}
+      <div className="px-6 mt-8">
+        {/* Title */}
+        <h2 className="text-4xl font-extrabold leading-tight mb-3">
+          准备好<br />
+          <span className="text-emerald-400">被评价</span>了吗？
+        </h2>
+        <p className="text-sm text-white/40 font-medium mb-8">
+          上传你的盘子，让 AI 决定你今晚是否配得上那顿宵夜。
+        </p>
+
+        {/* Upload Card */}
+        <label
+          className="block rounded-[2.5rem] bg-[#1C1F26] border border-white/5 aspect-[4/5] flex flex-col items-center justify-center cursor-pointer overflow-hidden mb-6"
+          onClick={handleFileUpload as any}
+        >
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleFileUpload}
+            className="hidden"
+            disabled={isAnalyzing}
+          />
+          <div className="w-24 h-24 rounded-[2rem] bg-emerald-500/10 flex items-center justify-center mb-4">
+            <span className="text-emerald-400 text-4xl">📷</span>
+          </div>
+          <p className="font-extrabold text-lg text-white/80">点击拍摄</p>
+        </label>
+
+        {/* Bottom Button */}
+        <button
+          onClick={handleFileUpload as any}
+          className="w-full py-5 rounded-3xl font-black text-lg bg-emerald-400 text-black active:scale-95 transition-all"
+        >
+          从相册选取
+        </button>
+      </div>
+
+      {/* Error Toast */}
+      {error && (
+        <div className="fixed bottom-8 left-6 right-6 p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-white text-sm text-center">
+          {error}
+        </div>
+      )}
+
+      {/* Loading Overlay */}
+      {isLoading && (
+        <div className="fixed inset-0 bg-[#0F1115]/90 flex items-center justify-center z-50">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="w-12 h-12 text-emerald-400 animate-spin" />
+            <p className="text-lg font-medium">分析中...</p>
+          </div>
+        </div>
+      )}
 
       {/* Usage Limit Modals */}
       <LoginPromptModal
@@ -207,52 +256,6 @@ export default function Home() {
         open={showSubscribeModal}
         onClose={() => setShowSubscribeModal(false)}
       />
-
-      {/* Bottom Controls */}
-      <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/80 to-transparent z-10">
-        {error && (
-          <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-white text-sm text-center">
-            {error}
-          </div>
-        )}
-
-        {isLoading ? (
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="w-12 h-12 text-white animate-spin" />
-            <p className="text-white text-lg font-medium">Analyzing...</p>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-6">
-            {/* Capture Button - Larger for mobile */}
-            <Button
-              onClick={capturePhoto}
-              className="w-28 h-28 rounded-full bg-white hover:bg-white/90 border-4 border-white/30 shadow-lg transition-all hover:scale-105 active:scale-95"
-              disabled={!stream || status === 'loading' || isAnalyzing}
-            >
-              <Camera className="w-12 h-12 text-black" />
-            </Button>
-
-            {/* Upload Button */}
-            <label className={`${isAnalyzing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileUpload}
-                className="hidden"
-                disabled={isAnalyzing}
-              />
-              <div className="flex items-center gap-2 px-6 py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full text-white font-medium transition-colors">
-                <Upload className="w-5 h-5" />
-                <span>Choose from Album</span>
-              </div>
-            </label>
-
-            <p className="text-white/60 text-xs text-center">
-              Aim at your plate, tap to capture or choose an image
-            </p>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
