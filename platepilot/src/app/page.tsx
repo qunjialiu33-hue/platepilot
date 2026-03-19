@@ -58,9 +58,9 @@ export default function Home() {
 
   const searchParams = useSearchParams();
   useEffect(() => {
-    if (searchParams.get('success') === 'true') {
+    if (searchParams.get('success') === 'true' && !searchParams.get('from')) {
       window.history.replaceState({}, '', '/');
-      window.location.reload();
+      setTimeout(() => window.location.reload(), 500);
     }
   }, [searchParams]);
 
@@ -131,7 +131,7 @@ export default function Home() {
 
   const handleUpgrade = async () => {
     if (!isSignedIn) {
-      window.location.href = "/sign-in?redirect_url=/";
+      window.location.href = "/sign-in?redirect_url=/?from=login";
       return;
     }
     setIsUpgrading(true);
