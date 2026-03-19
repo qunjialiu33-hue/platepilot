@@ -45,17 +45,6 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const { status, consume, isPro, isSignedIn } = useUsageGuard();
 
-  // 登录后自动刷新页面
-  const { isSignedIn: clerkSignedIn, isLoaded } = useUser();
-  const prevSignedIn = useRef<boolean | null>(null);
-  useEffect(() => {
-    if (!isLoaded) return;
-    if (prevSignedIn.current === false && clerkSignedIn === true) {
-      window.location.reload();
-    }
-    prevSignedIn.current = clerkSignedIn ?? false;
-  }, [clerkSignedIn, isLoaded]);
-
   const searchParams = useSearchParams();
   useEffect(() => {
     if (searchParams.get('success') === 'true' && !searchParams.get('from')) {
@@ -228,7 +217,7 @@ export default function Home() {
               onChange={handleFileSelected}
               className="hidden"
             />
-            {isSignedIn && !isPro && (
+            {isSignedIn && !isPro && status !== 'loading' && (
               <button
                 onClick={handleUpgrade}
                 disabled={isUpgrading}
