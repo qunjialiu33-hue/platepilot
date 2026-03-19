@@ -213,7 +213,7 @@ export default function Home() {
 
         {/* Gallery Button */}
         <button
-          onClick={handleFileUpload}
+          onClick={() => document.getElementById('fileInput')?.click()}
           className="w-full py-5 rounded-3xl bg-emerald-400 text-black font-black text-lg active:scale-95 transition-all"
         >
           从相册选取
@@ -221,6 +221,7 @@ export default function Home() {
 
         {/* Hidden file input */}
         <input
+          id="fileInput"
           type="file"
           accept="image/*"
           onChange={handleFileUpload}
