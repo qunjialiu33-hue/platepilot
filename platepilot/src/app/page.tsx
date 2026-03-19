@@ -166,37 +166,33 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0F1115] text-[#F8FAF0]">
-      {/* Sticky Top Navigation */}
-      <div className="sticky top-0 z-50 backdrop-blur-xl bg-[#0F1115]/80">
-        <div className="px-6 py-4 flex items-center justify-between">
-          {/* Left: Logo */}
+    <div className="min-h-screen bg-[#0F1115] text-[#F8FAF0] flex flex-col items-center" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      {/* Top Navigation */}
+      <nav className="w-full max-w-md px-6 pt-6 pb-4 flex flex-col gap-4 sticky top-0 bg-[#0F1115]/80 backdrop-blur-xl z-50">
+        <div className="flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-emerald-500 flex items-center justify-center">
-              <span className="text-lg">🐾</span>
+              <span className="text-black text-lg">🐾</span>
             </div>
             <div>
-              <p className="font-black text-lg leading-none">PlatePilot</p>
-              <p className="text-[10px] text-white/30 uppercase tracking-widest">AI Auditor</p>
+              <span className="block font-black text-lg leading-none">PlatePilot</span>
+              <span className="block text-[10px] uppercase tracking-widest text-white/30 font-bold">AI Auditor</span>
             </div>
           </div>
-          {/* Right: UserButton */}
           <UserButtonWithNoSSR />
         </div>
-        {/* Progress Bar */}
-        <div className="flex gap-2 px-6 pb-4">
+        <div className="flex gap-2">
           <div className="flex-1 h-1 rounded-full bg-emerald-400"></div>
           <div className="flex-1 h-1 rounded-full bg-white/10"></div>
           <div className="flex-1 h-1 rounded-full bg-white/10"></div>
           <div className="flex-1 h-1 rounded-full bg-white/10"></div>
         </div>
-      </div>
+      </nav>
 
       {/* Main Content */}
-      <div className="px-6 mt-8">
-        {/* Title */}
+      <main className="w-full max-w-md flex-1 px-6 mt-8 pb-12">
         <h2 className="text-4xl font-extrabold leading-tight mb-3">
-          准备好<br />
+          准备好<br/>
           <span className="text-emerald-400">被评价</span>了吗？
         </h2>
         <p className="text-sm text-white/40 font-medium mb-8">
@@ -204,31 +200,34 @@ export default function Home() {
         </p>
 
         {/* Upload Card */}
-        <label
-          className="block rounded-[2.5rem] bg-[#1C1F26] border border-white/5 aspect-[4/5] flex flex-col items-center justify-center cursor-pointer overflow-hidden mb-6"
-          onClick={handleFileUpload as any}
+        <div
+          onClick={capturePhoto}
+          className="w-full aspect-[4/5] rounded-[2.5rem] bg-[#1C1F26] border border-white/5 flex flex-col items-center justify-center cursor-pointer mb-6 overflow-hidden"
         >
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileUpload}
-            className="hidden"
-            disabled={isAnalyzing}
-          />
           <div className="w-24 h-24 rounded-[2rem] bg-emerald-500/10 flex items-center justify-center mb-4">
-            <span className="text-emerald-400 text-4xl">📷</span>
+            <span className="text-4xl">📷</span>
           </div>
-          <p className="font-extrabold text-lg text-white/80">点击拍摄</p>
-        </label>
+          <p className="font-extrabold text-lg">点击拍摄</p>
+          <p className="text-[10px] text-white/20 mt-2 uppercase tracking-widest">tap to capture</p>
+        </div>
 
-        {/* Bottom Button */}
+        {/* Gallery Button */}
         <button
-          onClick={handleFileUpload as any}
-          className="w-full py-5 rounded-3xl font-black text-lg bg-emerald-400 text-black active:scale-95 transition-all"
+          onClick={handleFileUpload}
+          className="w-full py-5 rounded-3xl bg-emerald-400 text-black font-black text-lg active:scale-95 transition-all"
         >
           从相册选取
         </button>
-      </div>
+
+        {/* Hidden file input */}
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleFileUpload}
+          className="hidden"
+          disabled={isAnalyzing}
+        />
+      </main>
 
       {/* Error Toast */}
       {error && (

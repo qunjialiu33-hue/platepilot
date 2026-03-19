@@ -36,6 +36,9 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
+        <head>
+          <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+        </head>
         <body
           className={`${plusJakarta.variable} font-sans antialiased`}
           style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
