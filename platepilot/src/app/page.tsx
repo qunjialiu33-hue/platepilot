@@ -9,6 +9,7 @@ const UserButtonWithNoSSR = dynamic(
 import { useState, useRef, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
+import { useSearchParams } from "next/navigation";
 import { useUsageGuard } from "@/hooks/use-usage-guard";
 import { LoginPromptModal, SubscribePromptModal } from "@/components/usage-limit-modal";
 import UpgradeModal from "@/components/UpgradeModal";
@@ -54,6 +55,14 @@ export default function Home() {
     }
     prevSignedIn.current = clerkSignedIn ?? false;
   }, [clerkSignedIn, isLoaded]);
+
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get('success') === 'true') {
+      window.history.replaceState({}, '', '/');
+      window.location.reload();
+    }
+  }, [searchParams]);
 
   const compressImage = (file: File): Promise<string> => {
     return new Promise((resolve) => {
@@ -219,6 +228,15 @@ export default function Home() {
               onChange={handleFileSelected}
               className="hidden"
             />
+            {isSignedIn && !isPro && (
+              <button
+                onClick={handleUpgrade}
+                disabled={isUpgrading}
+                className="w-full mt-4 py-4 rounded-3xl border border-emerald-500/30 text-emerald-400 font-bold text-sm active:scale-95 transition-all"
+              >
+                {isUpgrading ? "处理中..." : "⚡ 升级 PRO · 无限次分析"}
+              </button>
+            )}
           </div>
         )}
 

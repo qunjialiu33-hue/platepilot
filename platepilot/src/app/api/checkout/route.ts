@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     // 构建请求体
     const requestBody = {
       product_id: process.env.CREEM_PRODUCT_ID,
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/?success=true`,
       customer: {
         email: userEmail,
       },
