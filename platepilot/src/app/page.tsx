@@ -8,8 +8,6 @@ const UserButtonWithNoSSR = dynamic(
 
 import { useState, useRef, useEffect } from "react";
 import { Loader2 } from "lucide-react";
-import { useUser } from "@clerk/nextjs";
-import { useSearchParams } from "next/navigation";
 import { useUsageGuard } from "@/hooks/use-usage-guard";
 import { LoginPromptModal, SubscribePromptModal } from "@/components/usage-limit-modal";
 import UpgradeModal from "@/components/UpgradeModal";
@@ -44,14 +42,6 @@ export default function Home() {
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { status, consume, isPro, isSignedIn } = useUsageGuard();
-
-  const searchParams = useSearchParams();
-  useEffect(() => {
-    if (searchParams.get('success') === 'true' && !searchParams.get('from')) {
-      window.history.replaceState({}, '', '/');
-      setTimeout(() => window.location.reload(), 500);
-    }
-  }, [searchParams]);
 
   const compressImage = (file: File): Promise<string> => {
     return new Promise((resolve) => {
@@ -120,7 +110,7 @@ export default function Home() {
 
   const handleUpgrade = async () => {
     if (!isSignedIn) {
-      window.location.href = "/sign-in?redirect_url=/?from=login";
+      window.location.href = "/sign-in?redirect_url=/";
       return;
     }
     setIsUpgrading(true);
@@ -217,7 +207,7 @@ export default function Home() {
               onChange={handleFileSelected}
               className="hidden"
             />
-            {isSignedIn && !isPro && status !== 'loading' && (
+            {isSignedIn && !isPro && (
               <button
                 onClick={handleUpgrade}
                 disabled={isUpgrading}
