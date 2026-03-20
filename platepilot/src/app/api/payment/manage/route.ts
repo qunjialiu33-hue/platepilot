@@ -53,8 +53,6 @@ export async function GET(req: NextRequest) {
         },
         body: JSON.stringify({
           customer_id: userId,
-          // Optional: Add return_url if you want to redirect back to your app
-          return_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard`,
         }),
       }
     );
