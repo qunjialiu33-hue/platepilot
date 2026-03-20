@@ -148,18 +148,48 @@ export default function Home() {
     >
       {/* ── 顶部导航 ── */}
       <nav className="w-full max-w-md px-6 pt-6 pb-4 flex flex-col gap-4 sticky top-0 bg-[#0F1115]/80 backdrop-blur-xl z-50">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-              <span className="text-black text-lg">🐾</span>
+        {isPro ? (
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 shadow-xl">
+                <span className="text-base">💎</span>
+              </div>
+              <div>
+                <span className="block font-black text-lg leading-none">
+                  PlatePilot{" "}
+                  <span style={{ background: 'linear-gradient(135deg, #37D192 0%, #22d3ee 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 900, fontSize: '10px', letterSpacing: '0.1em' }}>
+                    PRO
+                  </span>
+                </span>
+                <span className="block text-[10px] uppercase tracking-widest text-emerald-400 font-black">Expert Analytics</span>
+              </div>
             </div>
-            <div>
-              <span className="block font-black text-lg leading-none">PlatePilot</span>
-              <span className="block text-[10px] uppercase tracking-widest text-white/30 font-bold">AI Auditor</span>
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <span className="block text-[10px] font-black text-white/40 uppercase">Pro Member</span>
+                <span className="block text-xs font-bold">尊贵的专业版用户</span>
+              </div>
+              <div className="p-[2px] rounded-full" style={{ background: 'linear-gradient(135deg, #37D192, #22d3ee)' }}>
+                <div className="w-10 h-10 rounded-full bg-slate-900 border-2 border-[#0F1115] overflow-hidden">
+                  <UserButtonWithNoSSR />
+                </div>
+              </div>
             </div>
           </div>
-          <UserButtonWithNoSSR />
-        </div>
+        ) : (
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                <span className="text-black text-lg">🐾</span>
+              </div>
+              <div>
+                <span className="block font-black text-lg leading-none">PlatePilot</span>
+                <span className="block text-[10px] uppercase tracking-widest text-white/30 font-bold">AI Auditor</span>
+              </div>
+            </div>
+            <UserButtonWithNoSSR />
+          </div>
+        )}
         <div className="flex gap-2">
           {([1, 2, 3, 4] as Step[]).map((i) => (
             <div
@@ -234,8 +264,13 @@ export default function Home() {
               style={{ boxShadow: '0 0 0 2px rgba(55,209,146,0.15), 0 25px 50px rgba(0,0,0,0.5)' }}
             >
               <div className="absolute inset-0 bg-emerald-400/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="w-28 h-28 rounded-[2.5rem] bg-white/5 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-700">
-                <span className="text-5xl">📷</span>
+              <div className="w-28 h-28 rounded-[2.5rem] bg-white/5 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-700"
+                style={{ border: '1px solid rgba(55,209,146,0.2)' }}>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#37D192" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 7h2l2-3h10l2 3h2a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/>
+                  <circle cx="12" cy="13" r="3"/>
+                  <path d="M8 3h8"/>
+                </svg>
               </div>
               <p className="text-xl font-black">开始专业扫描</p>
               <p className="text-[10px] text-white/20 mt-2 font-black tracking-[0.3em] uppercase">Ready for analysis</p>
@@ -260,8 +295,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* ── Step 2：AI 扫描中 ── */}
-        {step === 2 && (
+        {step === 2 && !isPro && (
           <div className="mt-8">
             <h2 className="text-2xl font-extrabold mb-2">正在视觉解析...</h2>
             <p className="text-sm text-white/40 mb-6">神经网络正在识别食材密度与热量</p>
@@ -284,6 +318,67 @@ export default function Home() {
               <div>
                 <p className="text-[10px] font-bold text-emerald-400 uppercase">AI 分析中</p>
                 <p className="font-extrabold">正在识别食材与营养密度...</p>
+              </div>
+            </div>
+            <style>{`
+              @keyframes scanLine {
+                0%   { top: 0%;   opacity: 0; }
+                10%  { opacity: 1; }
+                90%  { opacity: 1; }
+                100% { top: 100%; opacity: 0; }
+              }
+            `}</style>
+          </div>
+        )}
+
+        {step === 2 && isPro && (
+          <div className="mt-8">
+            <div className="flex justify-between items-end mb-6">
+              <div>
+                <h2 className="text-2xl font-extrabold">深度数据扫描...</h2>
+                <p className="text-sm text-white/40">正在计算体积并估算热量密度</p>
+              </div>
+              <div className="text-right">
+                <span className="block text-2xl font-black text-emerald-400">分析中</span>
+                <span className="text-[10px] font-bold text-white/30">EST. KCAL</span>
+              </div>
+            </div>
+            {imageData && (
+              <div className="relative rounded-[3rem] overflow-hidden aspect-square mb-6 border border-white/5"
+                style={{ boxShadow: '0 0 0 2px rgba(55,209,146,0.15)' }}>
+                <img src={imageData} alt="Plate" className="w-full h-full object-cover brightness-75" />
+                <div
+                  className="absolute left-0 right-0 h-1 z-10"
+                  style={{
+                    background: "#37D192",
+                    boxShadow: "0 0 20px #37D192",
+                    animation: "scanLine 2s linear infinite",
+                  }}
+                />
+                <div className="absolute inset-0"
+                  style={{ background: 'radial-gradient(circle at center, transparent 30%, rgba(55,209,146,0.08) 100%)' }}
+                />
+                <div className="absolute inset-0 opacity-20 pointer-events-none"
+                  style={{ backgroundImage: 'linear-gradient(rgba(55,209,146,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(55,209,146,0.15) 1px, transparent 1px)', backgroundSize: '16.66% 16.66%' }}
+                />
+              </div>
+            )}
+            <div className="bg-[#1C1F26] rounded-[2rem] p-6 border border-white/5"
+              style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.05), transparent)' }}>
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                  <Loader2 className="w-5 h-5 text-emerald-400 animate-spin" />
+                </div>
+                <span className="font-bold">PRO 实时分析报告</span>
+              </div>
+              <div className="space-y-3">
+                <div className="flex justify-between text-xs">
+                  <span className="text-white/40">GI 指数 (预估)</span>
+                  <span className="font-bold text-orange-400">分析中...</span>
+                </div>
+                <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-full bg-orange-400 animate-pulse" style={{ width: '60%' }} />
+                </div>
               </div>
             </div>
             <style>{`
