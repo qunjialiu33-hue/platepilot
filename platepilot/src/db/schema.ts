@@ -14,6 +14,14 @@ export const users = pgTable("users", {
   stripeCustomerId: varchar("stripe_customer_id", { length: 255 }),
   stripeSubscriptionId: varchar("stripe_subscription_id", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  age: integer("age"),
+  gender: varchar("gender", { length: 10 }),
+  height: integer("height"),
+  weight: integer("weight"),
+  targetWeight: integer("target_weight"),
+  activityLevel: varchar("activity_level", { length: 50 }),
+  dietaryRestrictions: varchar("dietary_restrictions", { length: 255 }),
+  fitnessGoal: varchar("fitness_goal", { length: 50 }),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 

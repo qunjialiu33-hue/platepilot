@@ -24,10 +24,10 @@ export default function UserMenu() {
       <SignedIn>
         <div className="flex items-center gap-4">
           <Link
-            href="/dashboard"
-            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900"
+            href="/profile"
+            className="px-4 py-2 text-sm text-white/60 hover:text-white font-medium"
           >
-            History
+            Profile
           </Link>
           <ClerkUserButton />
         </div>
