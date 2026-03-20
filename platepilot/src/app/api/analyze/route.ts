@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
       try {
         await db.insert(mealAudits).values({
           userId,
-          imageUrl: imageData,
+          imageUrl: null,
           score: analysisResult.score,
           resultJson: analysisResult,
         });
