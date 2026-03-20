@@ -175,7 +175,7 @@ export default function Home() {
       <main className="w-full max-w-md flex-1 px-6 pb-12">
 
         {/* ── Step 1：上传 ── */}
-        {step === 1 && (
+        {step === 1 && !isPro && (
           <div className="mt-8">
             <h2 className="text-4xl font-extrabold leading-tight mb-3">
               准备好<br />
@@ -207,15 +207,56 @@ export default function Home() {
               onChange={handleFileSelected}
               className="hidden"
             />
-            {!isPro && (
-              <button
-                onClick={handleUpgrade}
-                disabled={isUpgrading}
-                className="w-full mt-4 py-4 rounded-3xl border border-emerald-500/30 text-emerald-400 font-bold text-sm active:scale-95 transition-all"
-              >
-                {isUpgrading ? "处理中..." : "⚡ 升级 PRO · 无限次分析"}
-              </button>
-            )}
+            <button
+              onClick={handleUpgrade}
+              disabled={isUpgrading}
+              className="w-full mt-4 py-4 rounded-3xl border border-emerald-500/30 text-emerald-400 font-bold text-sm active:scale-95 transition-all"
+            >
+              {isUpgrading ? "处理中..." : "⚡ 升级 PRO · 无限次分析"}
+            </button>
+          </div>
+        )}
+
+        {step === 1 && isPro && (
+          <div className="mt-8">
+            <div className="inline-block px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-6">
+              <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">UNLIMITED AUDITS ENABLED</span>
+            </div>
+            <h2 className="text-4xl font-extrabold leading-tight mb-3 tracking-tight">
+              开启<br />深度营养审计
+            </h2>
+            <p className="text-sm text-white/40 font-medium mb-8">
+              专业版已启用：多维度食材识别、GI 指数分析及微量元素预估。
+            </p>
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full aspect-square rounded-[2.5rem] bg-[#1C1F26] border border-white/5 flex flex-col items-center justify-center cursor-pointer mb-8 overflow-hidden group transition-all hover:scale-[1.02] relative"
+              style={{ boxShadow: '0 0 0 2px rgba(55,209,146,0.15), 0 25px 50px rgba(0,0,0,0.5)' }}
+            >
+              <div className="absolute inset-0 bg-emerald-400/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="w-28 h-28 rounded-[2.5rem] bg-white/5 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-700">
+                <span className="text-5xl">📷</span>
+              </div>
+              <p className="text-xl font-black">开始专业扫描</p>
+              <p className="text-[10px] text-white/20 mt-2 font-black tracking-[0.3em] uppercase">Ready for analysis</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-[#1C1F26] rounded-[1.5rem] p-4 flex items-center gap-3 border border-white/5">
+                <span className="text-emerald-400">⚡</span>
+                <span className="text-xs font-bold">极速云处理</span>
+              </div>
+              <div className="bg-[#1C1F26] rounded-[1.5rem] p-4 flex items-center gap-3 border border-white/5">
+                <span className="text-cyan-400">🔬</span>
+                <span className="text-xs font-bold">Claude 3.5 视觉引擎</span>
+              </div>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileSelected}
+              className="hidden"
+            />
           </div>
         )}
 
