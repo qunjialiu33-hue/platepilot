@@ -141,8 +141,6 @@ export default function Home() {
     return "垃圾食品";
   };
 
-  console.log('render:', { isSignedIn, isPro, status });
-
   return (
     <div
       className="min-h-screen bg-[#0F1115] text-[#F8FAF0] flex flex-col items-center"
@@ -209,7 +207,7 @@ export default function Home() {
               onChange={handleFileSelected}
               className="hidden"
             />
-            {isSignedIn && !isPro && (
+            {!isPro && (
               <button
                 onClick={handleUpgrade}
                 disabled={isUpgrading}
